@@ -517,7 +517,6 @@ Las Linux Capabilities dividen los privilegios de root en unidades más pequeña
 - Cualquier usuario local podía obtener acceso administrativo
 
 **Mitigación:**
-- Auditar regularmente las capabilities con `getcap -r / 2>/dev/null`
 - Solo asignar capabilities cuando sea absolutamente necesario
 - Considerar alternativas como sudo con reglas específicas
 - Usar herramientas de auditoría como LinPEAS periódicamente
