@@ -22,16 +22,16 @@ Guía completa y detallada de la máquina **Cap** de HckTheBox documentando todo
 ##  Objetivos de la Máquina
 
 - [x] Reconocimiento y enumeración de servicios
-- [x] Explotación de servicio FTP con acceso anónimo
-- [x] Ataque de fuerza bruta a aplicación web
-- [x] Explotación de RCE en Codiad (CVE-2018-14009)
-- [x] Movimiento lateral entre usuarios
-- [x] Escalada de privilegios mediante sudo misconfiguration
+- [x] Enumeración de directorios
+- [x] Análisis de archivos pcap
+- [x] Acceso remoto
+- [x] Escalada de privilegios
 - [x] Obtención de flags user.txt y root.txt
 
 ## Tecnologías y Herramientas
 
 ### Herramientas de Pentesting
 - **Nmap** - Escaneo de puertos y servicios
-- **Burp Suite** - Interceptación y fuerza bruta
-- **Netcat** - Reverse shells
+- **Wireshark** - Análisis de tráfico
+- **Linpeas** - Escalada de prviliegios
+- **Gobuster** - Enumeración de directorios
