@@ -118,7 +118,7 @@ Cada uno de estos endpoints (`/data/0`, `/data/1`, etc.) representa una captura 
 
 ---
 
-## 📊 Fase 3: Análisis del Dashboard
+##  Fase 3: Análisis del Dashboard
 
 ### Exploración del Security Dashboard
 
